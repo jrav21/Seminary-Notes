@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LDS Seminary Notes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #020617;
+      --border: #334155;
+      --accent: #60a5fa;
+      --text: #e5e7eb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 16px 20px;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .top-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 500;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      border-color: var(--accent);
+    }
+
+    .hidden { display: none; }
+
+    button {
+      background: none;
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .notes {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      font-family: inherit;
+      font-size: 0.95rem;
+      background: var(--card);
+      color: var(--text);
+    }
+
+    img.preview {
+      max-width: 100%;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+    }
+
+    #imageGallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.image-wrap {
+  position: relative;
+}
+
+.image-wrap img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+}
+
+.image-wrap button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.75);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+  </style>
+  
+</head>
+<body>
+
+<div class="top-bar"><header id="title">Seminary Notes</header><button id="exportBtn">Export Image</button></div>
+<button class="back hidden" id="backBtn">← Back</button>
+
+<!-- MONTHS -->
+<div class="grid" id="months"></div>
+
+<!-- WEEKS -->
+<div class="grid hidden" id="weeks"></div>
+
+<!-- DAYS -->
+<div class="grid hidden" id="days"></div>
+
+<!-- NOTES -->
+<div class="notes hidden" id="notes">
+  <textarea id="textNotes" placeholder="Write your seminary notes here..."></textarea>
+  <input type="file" id="imageInput" accept="image/*" multiple />
+  <div id="imageGallery"></div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+  const monthsEl = document.getElementById('months');
+  const weeksEl = document.getElementById('weeks');
+  const daysEl = document.getElementById('days');
+  const notesEl = document.getElementById('notes');
+  const titleEl = document.getElementById('title');
+  const backBtn = document.getElementById('backBtn');
+
+  const textNotes = document.getElementById('textNotes');
+  const imageInput = document.getElementById('imageInput');
+  const imageGallery = document.getElementById('imageGallery');
+
+
+  let path = [];
+
+  const months = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+  ];
+
+  function saveNotes() {
+  const key = path.join('-');
+  const images = Array.from(imageGallery.querySelectorAll('img'))
+    .map(img => img.src);
+
+  localStorage.setItem(key, JSON.stringify({
+    text: textNotes.value,
+    images
+  }));
+}
+
+
+  function loadNotes() {
+  const key = path.join('-');
+  const data = JSON.parse(localStorage.getItem(key) || '{}');
+
+  textNotes.value = data.text || '';
+  imageGallery.innerHTML = '';
+
+  (data.images || []).forEach(src => addImage(src));
+}
+
+
+  function clearViews() {
+    monthsEl.classList.add('hidden');
+    weeksEl.classList.add('hidden');
+    daysEl.classList.add('hidden');
+    notesEl.classList.add('hidden');
+  }
+
+  function showMonths() {
+    clearViews();
+    titleEl.textContent = 'Seminary Notes';
+    backBtn.classList.add('hidden');
+    monthsEl.classList.remove('hidden');
+    path = [];
+  }
+
+  function showWeeks(month) {
+    clearViews();
+    titleEl.textContent = month;
+    backBtn.classList.remove('hidden');
+    weeksEl.innerHTML = '';
+    for (let i = 1; i <= 4; i++) {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.textContent = `Week ${i}`;
+      div.onclick = () => showDays(month, `Week ${i}`);
+      weeksEl.appendChild(div);
+    }
+    weeksEl.classList.remove('hidden');
+    path = [month];
+  }
+
+  function showDays(month, week) {
+    clearViews();
+    titleEl.textContent = `${month} – ${week}`;
+    backBtn.classList.remove('hidden');
+    daysEl.innerHTML = '';
+    ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].forEach(day => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.textContent = day;
+      div.onclick = () => showNotes(month, week, day);
+      daysEl.appendChild(div);
+    });
+    daysEl.classList.remove('hidden');
+    path = [month, week];
+  }
+
+  function showNotes(month, week, day) {
+    clearViews();
+    titleEl.textContent = `${month} – ${week} – ${day}`;
+    backBtn.classList.remove('hidden');
+    notesEl.classList.remove('hidden');
+    path = [month, week, day];
+    loadNotes();
+  }
+
+  backBtn.onclick = () => {
+    if (path.length === 3) showDays(path[0], path[1]);
+    else if (path.length === 2) showWeeks(path[0]);
+    else showMonths();
+  };
+
+  textNotes.addEventListener('input', saveNotes);
+
+  imageInput.addEventListener('change', () => {
+  Array.from(imageInput.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      addImage(reader.result);
+      saveNotes();
+    };
+    reader.readAsDataURL(file);
+  });
+  imageInput.value = '';
+});
+
+
+
+  document.getElementById('exportBtn').onclick = () => {
+    html2canvas(document.body).then(canvas => {
+      const link = document.createElement('a');
+      link.download = 'seminary-notes.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  };
+
+  // init
+  months.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.textContent = m + ' Seminary';
+    div.onclick = () => showWeeks(m);
+    monthsEl.appendChild(div);
+  });
+
+  function addImage(src) {
+  const wrap = document.createElement('div');
+  wrap.className = 'image-wrap';
+
+  const img = document.createElement('img');
+  img.src = src;
+
+  const btn = document.createElement('button');
+  btn.textContent = '✕';
+  btn.onclick = () => {
+    wrap.remove();
+    saveNotes();
+  };
+
+  wrap.appendChild(img);
+  wrap.appendChild(btn);
+  imageGallery.appendChild(wrap);
+}
+
+</script>
+
+</body>
+</html>
