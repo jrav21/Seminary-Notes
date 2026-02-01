@@ -86,17 +86,20 @@
       gap: 12px;
     }
 
-    textarea {
-      min-height: 180px;
-      resize: vertical;
-      padding: 12px;
-      border-radius: 12px;
-      border: 2px solid var(--border);
-      font-family: inherit;
-      font-size: 0.95rem;
-      background: var(--card);
-      color: var(--text);
-    }
+   textarea {
+  min-height: 420px;
+  resize: vertical;
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  font-family: inherit;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  background: var(--card);
+  color: var(--text);
+  overflow: hidden;
+}
+
 
     img.preview {
       max-width: 100%;
@@ -189,25 +192,19 @@
 
   function saveNotes() {
   const key = path.join('-');
-  const images = Array.from(imageGallery.querySelectorAll('img'))
-    .map(img => img.src);
-
   localStorage.setItem(key, JSON.stringify({
-    text: textNotes.value,
-    images
+    text: textNotes.value
   }));
 }
+
 
 
   function loadNotes() {
   const key = path.join('-');
   const data = JSON.parse(localStorage.getItem(key) || '{}');
-
   textNotes.value = data.text || '';
-  imageGallery.innerHTML = '';
-
-  (data.images || []).forEach(src => addImage(src));
 }
+
 
 
   function clearViews() {
@@ -288,14 +285,35 @@
 
 
 
-  document.getElementById('exportBtn').onclick = () => {
-    html2canvas(document.body).then(canvas => {
-      const link = document.createElement('a');
-      link.download = 'seminary-notes.png';
-      link.href = canvas.toDataURL();
-      link.click();
-    });
-  };
+  document.getElementById('exportBtn').onclick = async () => {
+  const textarea = document.getElementById('textNotes');
+
+  // Save original height
+  const originalHeight = textarea.style.height;
+
+  // Expand textarea to fit ALL content
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+
+  // Wait one frame so the browser updates layout
+  await new Promise(requestAnimationFrame);
+
+  html2canvas(document.body, {
+    scale: 2,
+    windowWidth: document.body.scrollWidth,
+    windowHeight: document.body.scrollHeight
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'seminary-notes.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    // Restore original height
+    textarea.style.height = originalHeight;
+  });
+};
+
+
 
   // init
   months.forEach(m => {
