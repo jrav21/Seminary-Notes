@@ -6,6 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
+    .export-notes {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  min-height: 420px;
+}
+
+    
     :root {
       --bg: #0f172a;
       --card: #020617;
@@ -287,15 +301,21 @@
 
   document.getElementById('exportBtn').onclick = async () => {
   const textarea = document.getElementById('textNotes');
+  const notesContainer = textarea.parentElement;
 
-  // Save original height
-  const originalHeight = textarea.style.height;
+  // Create fake div that preserves formatting
+  const exportDiv = document.createElement('div');
+  exportDiv.className = 'export-notes';
+  exportDiv.textContent = textarea.value;
 
-  // Expand textarea to fit ALL content
-  textarea.style.height = 'auto';
-  textarea.style.height = textarea.scrollHeight + 'px';
+  // Match textarea size
+  exportDiv.style.width = textarea.offsetWidth + 'px';
 
-  // Wait one frame so the browser updates layout
+  // Swap textarea with export div
+  textarea.style.display = 'none';
+  notesContainer.appendChild(exportDiv);
+
+  // Wait for layout
   await new Promise(requestAnimationFrame);
 
   html2canvas(document.body, {
@@ -308,10 +328,12 @@
     link.href = canvas.toDataURL('image/png');
     link.click();
 
-    // Restore original height
-    textarea.style.height = originalHeight;
+    // Restore original view
+    exportDiv.remove();
+    textarea.style.display = '';
   });
 };
+
 
 
 
