@@ -127,6 +127,20 @@
   gap: 16px;
 }
 
+    #printNotes {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  padding: 20px;
+  background: #050b1d;
+  color: white;
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.15);
+  width: 100%;
+}
+
+
 .image-wrap img {
   width: 100%;
   height: 180px;
@@ -163,6 +177,13 @@
 </head>
 <body>
 
+<div id="notesWrapper">
+  <textarea id="notesInput"></textarea>
+</div>
+
+<button id="exportBtn">Export Image</button>
+
+  
 <div class="top-bar"><header id="title">Seminary Notes</header><button id="exportBtn">Export Image</button></div>
 <button class="back hidden" id="backBtn">← Back</button>
 
@@ -299,40 +320,40 @@
 
 
 
-  document.getElementById('exportBtn').onclick = async () => {
-  const textarea = document.getElementById('textNotes');
-  const notesContainer = textarea.parentElement;
+ document.getElementById("exportBtn").onclick = async () => {
+  const textarea = document.getElementById("notesInput");
+  const wrapper = document.getElementById("notesWrapper");
 
-  // Create fake div that preserves formatting
-  const exportDiv = document.createElement('div');
-  exportDiv.className = 'export-notes';
-  exportDiv.textContent = textarea.value;
+  // Create printable div
+  const printDiv = document.createElement("div");
+  printDiv.id = "printNotes";
+  printDiv.textContent = textarea.value;
 
-  // Match textarea size
-  exportDiv.style.width = textarea.offsetWidth + 'px';
+  // Force height to fit ALL text
+  printDiv.style.minHeight = textarea.scrollHeight + "px";
 
-  // Swap textarea with export div
-  textarea.style.display = 'none';
-  notesContainer.appendChild(exportDiv);
+  // Hide textarea, show print version
+  textarea.style.display = "none";
+  wrapper.appendChild(printDiv);
 
-  // Wait for layout
-  await new Promise(requestAnimationFrame);
+  await new Promise(r => requestAnimationFrame(r));
 
-  html2canvas(document.body, {
+  html2canvas(printDiv, {
     scale: 2,
-    windowWidth: document.body.scrollWidth,
-    windowHeight: document.body.scrollHeight
+    height: printDiv.scrollHeight,
+    windowHeight: printDiv.scrollHeight
   }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = 'seminary-notes.png';
-    link.href = canvas.toDataURL('image/png');
+    const link = document.createElement("a");
+    link.download = "notes.png";
+    link.href = canvas.toDataURL("image/png");
     link.click();
 
-    // Restore original view
-    exportDiv.remove();
-    textarea.style.display = '';
+    // Restore UI
+    printDiv.remove();
+    textarea.style.display = "";
   });
 };
+
 
 
 
